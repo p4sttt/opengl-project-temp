@@ -1,9 +1,10 @@
 #include "App.hpp"
 #include "Graphics.hpp"
-#include "Math.hpp"
 #include "ProjectLoader.hpp"
 #include <glad.h>
-#include <vector>
+
+// Сейчас код не работает, так как есть ошибки в ProjectLoader
+// но если захардкодить вершины, индексы и шейдеры, то все будет ок
 
 int main()
 {
