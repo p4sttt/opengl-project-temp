@@ -29,18 +29,20 @@ void ProjectLoader::ParseDrawMode(const char* line, unsigned& drawMode)
         LOG << "DrawMode successfully parsed: TRIANGLES" << '\n';
         drawMode = GL_TRIANGLES;
     }
-    if (strncmp(line, "LINES", 6) == 0)
+    else if (strncmp(line, "LINES", 6) == 0)
     {
         LOG << "DrawMode successfully parsed: LINES" << '\n';
         drawMode = GL_LINES;
     }
-    if (strncmp(line, "POINTS", 7) == 0)
+    else if (strncmp(line, "POINTS", 7) == 0)
     {
         LOG << "DrawMode successfully parsed: POINTS" << '\n';
         drawMode = GL_POINT;
     }
     else
+    {
         LOG_ERROR << "Failed to parse DrawMode" << '\n';
+    }
 }
 
 void ProjectLoader::ParseVertex(const char* line, std::vector<Math::Vertex>& vertices)
@@ -62,7 +64,7 @@ void ProjectLoader::ParseVertex(const char* line, std::vector<Math::Vertex>& ver
 void ProjectLoader::ParseIndices(const char* line, std::vector<unsigned int>& indices)
 {
     unsigned int index;
-    const char* ptr = line + 1;
+    const char* ptr = line + 2;
 
     LOG << "Parsing indices: ";
 
@@ -74,7 +76,10 @@ void ProjectLoader::ParseIndices(const char* line, std::vector<unsigned int>& in
         if (ptr != nullptr)
             ptr++;
         else
+        {
+            std::cout << '\n';
             break;
+        }
     }
 
     LOG << "Indices parsed" << '\n';
@@ -137,7 +142,7 @@ void ProjectLoader::LoadShader(const char* shaderPath, const char* shaderSource)
     buffer << shaderFile.rdbuf();
     shaderSource = buffer.str().c_str();
 
-    LOG << "Load Shader: " << shaderPath << '\n' << shaderSource << '\n';
+    LOG << "Load Shader: " << shaderPath << '\n' << buffer.str() << '\n';
 
     shaderFile.close();
 }

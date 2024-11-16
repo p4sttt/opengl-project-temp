@@ -8,11 +8,9 @@ class ProjectLoader
   private:
     static ProjectLoader* instance;
 
-    const char* _vertex_shader_path =
-        "/home/d4y2k/Programming/OpenGLUltimate/res/shaders/vertex.glsl";
-    const char* _fragment_shader_path =
-        "/home/d4y2k/Programming/OpenGLUltimate/res/shaders/fragment.glsl";
-    const char* _model_path = "/home/d4y2k/Programming/OpenGLUltimate/res/model.myobj";
+    const char* _vertex_shader_path = "../res/shaders/vertex.glsl";
+    const char* _fragment_shader_path = "../res/shaders/fragment.glsl";
+    const char* _model_path = "../res/model.myobj";
 
     ProjectLoader();
     ProjectLoader(const ProjectLoader&) = delete;
