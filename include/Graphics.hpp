@@ -76,6 +76,8 @@ class Renderer
   private:
     Model* _model;
     ShaderProgram* _shaderProgram;
+    float _time = 0.0f;
+    const float _time_step = 0.01f;
 
   public:
     Renderer();

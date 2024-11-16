@@ -220,15 +220,22 @@ Graphics::Renderer::~Renderer()
 
 void Graphics::Renderer::Render()
 {
+
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
     glUseProgram(_shaderProgram->GetId());
+
+    unsigned timeUniformLocation =
+        glGetUniformLocation(_shaderProgram->GetId(), "u_time");
+    glUniform1f(timeUniformLocation, _time);
 
     _model->GetVertexArray().Bind();
     glDrawElements(
         _model->GetDrawMode(), _model->GetElementsCount(), GL_UNSIGNED_INT, nullptr
     );
     _model->GetVertexArray().Unbind();
+
+    _time += _time_step;
 }
 
 const Graphics::Model* Graphics::Renderer::GetModel() const
