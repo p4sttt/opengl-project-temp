@@ -3,88 +3,6 @@
 #include <glad.h>
 #define GLFW_INCLUDE_NONE
 
-void CheckOpenGLError(const char* file, int line)
-{
-    GLenum errorCode;
-    while ((errorCode = glGetError()) != GL_NO_ERROR)
-    {
-        std::string error;
-        switch (errorCode)
-        {
-        case GL_INVALID_ENUM:
-            error = "INVALID_ENUM";
-            break;
-        case GL_INVALID_VALUE:
-            error = "INVALID_VALUE";
-            break;
-        case GL_INVALID_OPERATION:
-            error = "INVALID_OPERATION";
-            break;
-        case GL_INVALID_FRAMEBUFFER_OPERATION:
-            error = "INVALID_FRAMEBUFFER_OPERATION";
-            break;
-        case GL_OUT_OF_MEMORY:
-            error = "OUT_OF_MEMORY";
-            break;
-        default:
-            error = "UNKNOWN_ERROR";
-            break;
-        }
-        LOG_ERROR << "OpenGL Error (" << error << "): " << file << " (" << line << ")\n";
-    }
-}
-
-class GLErrorScope
-{
-  public:
-    GLErrorScope(const char* file, int line) : _file(file), _line(line)
-    {
-        while (glGetError() != GL_NO_ERROR)
-        {
-        } // Сбрасываем существующие ошибки
-    }
-
-    ~GLErrorScope()
-    {
-        GLenum errorCode;
-        while ((errorCode = glGetError()) != GL_NO_ERROR)
-        {
-            std::string error;
-            switch (errorCode)
-            {
-            case GL_INVALID_ENUM:
-                error = "INVALID_ENUM";
-                break;
-            case GL_INVALID_VALUE:
-                error = "INVALID_VALUE";
-                break;
-            case GL_INVALID_OPERATION:
-                error = "INVALID_OPERATION";
-                break;
-            case GL_INVALID_FRAMEBUFFER_OPERATION:
-                error = "INVALID_FRAMEBUFFER_OPERATION";
-                break;
-            case GL_OUT_OF_MEMORY:
-                error = "OUT_OF_MEMORY";
-                break;
-            default:
-                error = "UNKNOWN_ERROR";
-                break;
-            }
-            LOG_ERROR << "OpenGL Error (" << error << "): " << _file << " (" << _line
-                      << ")\n";
-        }
-    }
-
-  private:
-    const char* _file;
-    int _line;
-};
-
-#define GL_SCOPE() GLErrorScope __glErrorScope(__FILE__, __LINE__)
-
-#define CHECK_GL_ERROR() CheckOpenGLError(__FILE__, __LINE__)
-
 Graphics::Buffer::Buffer(
     unsigned type, unsigned count, unsigned elementSize, const void* data
 )
@@ -206,12 +124,9 @@ size_t Graphics::Model::GetElementsCount()
 
 unsigned Graphics::ShaderProgram::CompileShader(unsigned type, const char* source)
 {
-    while (glGetError() != GL_NO_ERROR)
-        ;
-    GL_SCOPE();
 
     unsigned id = glCreateShader(type);
-    LOG << "Compiling Shader: " << id << '\n' << source << '\n';
+    LOG << "Compiling Shader: " << id << '\n';
 
     glShaderSource(id, 1, &source, nullptr);
     glCompileShader(id);
@@ -224,7 +139,7 @@ unsigned Graphics::ShaderProgram::CompileShader(unsigned type, const char* sourc
         glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length);
         char log[length];
         glGetShaderInfoLog(id, length, &length, log);
-        LOG_ERROR << "Shader compilation failed: " << log << '\n';
+        LOG_ERROR << "Shader compilation failed: " << log;
         glDeleteShader(id);
         return 0;
     }
@@ -237,9 +152,6 @@ Graphics::ShaderProgram::ShaderProgram(
     const char* vertexShaderSource, const char* fragmentShaderSource
 )
 {
-    while (glGetError() != GL_NO_ERROR)
-        ;
-    GL_SCOPE();
 
     _id = glCreateProgram();
     LOG << "Creating ShaderProgram: " << _id << '\n';
@@ -255,11 +167,9 @@ Graphics::ShaderProgram::ShaderProgram(
 
     LOG << "Attaching vertex shader: " << vertexShader << '\n';
     glAttachShader(_id, vertexShader);
-    CHECK_GL_ERROR();
 
     LOG << "Attaching fragment shader: " << fragmentShader << '\n';
     glAttachShader(_id, fragmentShader);
-    CHECK_GL_ERROR();
 
     LOG << "Linking program: " << _id << '\n';
     glLinkProgram(_id);
@@ -280,6 +190,8 @@ Graphics::ShaderProgram::ShaderProgram(
         LOG << "ShaderProgram successfully created: " << _id << '\n';
     }
 
+    delete vertexShaderSource;
+    delete fragmentShaderSource;
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 }

@@ -19,7 +19,7 @@ class ProjectLoader
     void ParseDrawMode(const char* line, unsigned& drawMode);
     void ParseVertex(const char* line, std::vector<Math::Vertex>& vertices);
     void ParseIndices(const char* line, std::vector<unsigned int>& indices);
-    void LoadShader(const char* shaderPath, const char* shaderSource);
+    void LoadShader(const char* shaderPath, char** shaderSource);
 
   public:
     static ProjectLoader& GetInstance();

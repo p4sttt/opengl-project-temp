@@ -128,7 +128,7 @@ Graphics::Model* ProjectLoader::LoadModel()
     return new Graphics::Model(drawMode, vertices, indices);
 }
 
-void ProjectLoader::LoadShader(const char* shaderPath, const char* shaderSource)
+void ProjectLoader::LoadShader(const char* shaderPath, char** shaderSource)
 {
     std::fstream shaderFile(shaderPath);
 
@@ -140,9 +140,13 @@ void ProjectLoader::LoadShader(const char* shaderPath, const char* shaderSource)
 
     std::stringstream buffer;
     buffer << shaderFile.rdbuf();
-    shaderSource = buffer.str().c_str();
+    std::string sourceBuf = buffer.str();
 
-    LOG << "Load Shader: " << shaderPath << '\n' << buffer.str() << '\n';
+    *shaderSource = new char[sourceBuf.size() + 1];
+    std::copy(sourceBuf.begin(), sourceBuf.end(), *shaderSource);
+    (*shaderSource)[sourceBuf.size()] = '\0';
+
+    LOG << "Load Shader: " << shaderPath << '\n' << *shaderSource << '\n';
 
     shaderFile.close();
 }
@@ -150,10 +154,10 @@ void ProjectLoader::LoadShader(const char* shaderPath, const char* shaderSource)
 Graphics::ShaderProgram* ProjectLoader::LoadShaderProgram()
 {
 
-    const char *vertexShaderSource, *fragmentShaderSource;
+    char *vertexShaderSource = nullptr, *fragmentShaderSource = nullptr;
 
-    LoadShader(_vertex_shader_path, vertexShaderSource);
-    LoadShader(_fragment_shader_path, fragmentShaderSource);
+    LoadShader(_vertex_shader_path, &vertexShaderSource);
+    LoadShader(_fragment_shader_path, &fragmentShaderSource);
 
     return new Graphics::ShaderProgram(vertexShaderSource, fragmentShaderSource);
 }
@@ -178,18 +182,15 @@ void ProjectLoader::SetModelPath(const char* path)
 
 const char* ProjectLoader::GetVertexShaderPath() const
 {
-    delete _vertex_shader_path;
     return _vertex_shader_path;
 }
 
 const char* ProjectLoader::GetFragmentShaderPath() const
 {
-    delete _fragment_shader_path;
     return _fragment_shader_path;
 }
 
 const char* ProjectLoader::GetModelPath() const
 {
-    delete _model_path;
     return _model_path;
 }
