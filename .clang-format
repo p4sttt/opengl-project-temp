@@ -1,0 +1,10 @@
+BasedOnStyle:  Microsoft
+IndentWidth: 4
+Language: Cpp
+ColumnLimit: 90
+AlignAfterOpenBracket: BlockIndent
+AllowShortLambdasOnASingleLine: None
+BreakBeforeBraces: Custom
+BraceWrapping:
+    AfterClass: true
+PointerAlignment: Left 
