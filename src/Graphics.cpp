@@ -1,5 +1,6 @@
 #include "Graphics.hpp"
 #include "Logger.hpp"
+#include "Math.hpp"
 #include <glad.h>
 #define GLFW_INCLUDE_NONE
 
@@ -83,11 +84,12 @@ Graphics::Model::Model(
     unsigned drawMode, const std::vector<Math::Vertex>& vertices,
     const std::vector<unsigned>& indices
 )
-    : _vertices(vertices), _indices(indices),
+    : _vertices(vertices), _indices(indices), _transform(nullptr),
       _vbo(GL_ARRAY_BUFFER, vertices.size(), sizeof(Math::Vertex), vertices.data()),
       _ebo(GL_ELEMENT_ARRAY_BUFFER, indices.size(), sizeof(unsigned), indices.data()),
       _draw_mode(drawMode)
 {
+    _transform = new Math::Transform();
     LOG << "Creating Model" << '\n';
     _vao.Bind();
     _vbo.Bind();
@@ -104,6 +106,11 @@ Graphics::Model::Model(
 
 Graphics::Model::~Model()
 {
+    if (_transform)
+    {
+        delete _transform;
+        _transform = nullptr;
+    }
     LOG << "Kill Model" << '\n';
 }
 
@@ -112,7 +119,7 @@ const Graphics::VertexArray& Graphics::Model::GetVertexArray() const
     return _vao;
 }
 
-Math::Transform& Graphics::Model::GetTransform()
+Math::Transform* Graphics::Model::GetTransform()
 {
     return _transform;
 }
@@ -194,7 +201,7 @@ Graphics::ShaderProgram::ShaderProgram(
         LOG << "ShaderProgram successfully created: " << _id << '\n';
 
         _uniform_time_location = glGetUniformLocation(_id, "u_time");
-        _uniform_transformation_location = glGetUniformLocation(_id, "u_transformation");
+        _uniform_transform_location = glGetUniformLocation(_id, "u_transform");
     }
 
     delete vertexShaderSource;
@@ -221,9 +228,9 @@ void Graphics::ShaderProgram::SetTime(const float& time)
     glUniform1f(_uniform_time_location, time);
 }
 
-void Graphics::ShaderProgram::SetTransformation(const float* matrix)
+void Graphics::ShaderProgram::SetTransform(const float* transform)
 {
-    glUniformMatrix4fv(_uniform_transformation_location, 4, GL_FALSE, matrix);
+    glUniformMatrix4fv(_uniform_transform_location, 1, GL_FALSE, transform);
 }
 
 Graphics::Renderer::Renderer() : _model(nullptr), _shader_program(nullptr)
@@ -241,12 +248,12 @@ Graphics::Renderer::~Renderer()
 
 void Graphics::Renderer::Render()
 {
-
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
     glUseProgram(_shader_program->GetId());
     _shader_program->SetTime(_time);
+    _shader_program->SetTransform(_model->GetTransform()->GetMatrix().Data());
 
     _model->GetVertexArray().Bind();
     glDrawElements(

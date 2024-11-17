@@ -57,10 +57,10 @@ class EventHandler
 class TransformController : public IEventListener
 {
   private:
-    Math::Transform _transform;
+    Math::Transform* _transform;
 
   public:
-    TransformController(Math::Transform& transform);
+    TransformController(Math::Transform* transform);
     ~TransformController();
 
     void OnKeyEvent(int key, int action, int mods) override;

@@ -4,7 +4,7 @@
 
 template <int N, int M> Math::Matrix<N, M>::Matrix()
 {
-    data.fill(0.0f);
+    _data.fill(0.0f);
 }
 
 template <int N, int M>
@@ -28,13 +28,13 @@ Math::Matrix<N, M>::Matrix(std::initializer_list<std::initializer_list<float>> v
 
 template <int N, int M> float& Math::Matrix<N, M>::operator()(int row, int col)
 {
-    return data[row * M + col];
+    return _data[row * M + col];
 }
 
 template <int N, int M>
 const float& Math::Matrix<N, M>::operator()(int row, int col) const
 {
-    return data[row * M + col];
+    return _data[row * M + col];
 }
 
 template <int N, int M>
@@ -62,10 +62,10 @@ Math::Matrix<N_, K> Math::operator*(
     {
         for (int j = 0; j < M_; ++j)
         {
-            int current = 0;
+            float current = 0;
             for (int k = 0; k < M_; ++k)
             {
-                current = result(i, k) * result(k, j);
+                current += left(i, k) * right(k, j);
             }
             result(i, j) = current;
         }
@@ -76,7 +76,7 @@ Math::Matrix<N_, K> Math::operator*(
 
 template <int N, int M> const float* Math::Matrix<N, M>::Data() const
 {
-    return data.data();
+    return _data.data();
 }
 
 template <int N, int M> void Math::Matrix<N, M>::SetIdenity()
@@ -86,6 +86,8 @@ template <int N, int M> void Math::Matrix<N, M>::SetIdenity()
         (*this)(i, i) = 1.0f;
     }
 }
+
+template class Math::Matrix<4, 4>;
 
 Math::Transform::Transform()
 {
@@ -115,14 +117,12 @@ void Math::Transform::Reset()
 void Math::Transform::Move(Math::Axis axis, bool positive)
 {
     float step = positive ? _move_step : -_move_step;
-
     position[axis] += step;
 }
 
 void Math::Transform::Rotate(Math::Axis axis, bool positive)
 {
     float step = positive ? _rotation_step : -_rotation_step;
-
     rotation[axis] += step;
 }
 
@@ -155,7 +155,6 @@ Math::Matrix<4, 4> Math::Transform::GetMatrix() const
         {0.0f, sin_x, cos_x, 0.0f},
         {0.0f, 0.0f, 0.0f, 1.0f},
     };
-
     float sin_y = sinf(rotation[Math::Axis::y]);
     float cos_y = cosf(rotation[Math::Axis::y]);
     Math::Matrix<4, 4> rotation_y = {
@@ -174,20 +173,10 @@ Math::Matrix<4, 4> Math::Transform::GetMatrix() const
         {0.0f, 0.0f, 0.0f, 1.0f},
     };
 
-    Math::Matrix<4, 4> translation_matrix;
-    for (int i = 0; i < 4; ++i)
-    {
-        for (int j = 0; j < 4; ++j)
-        {
-            translation_matrix(i, j) = (i == j) ? 1.0f : 0.0f;
-        }
-    }
-    translation_matrix(0, 3) = position[Math::Axis::x];
-    translation_matrix(1, 3) = position[Math::Axis::y];
-    translation_matrix(2, 3) = position[Math::Axis::z];
+    transformation_matrix = rotation_z * rotation_y * rotation_x * scale_matrix;
+    transformation_matrix(0, 3) = position[Math::Axis::x];
+    transformation_matrix(1, 3) = position[Math::Axis::y];
+    transformation_matrix(2, 3) = position[Math::Axis::z];
 
-    transformation_matrix =
-        translation_matrix * rotation_z * rotation_y * rotation_x * scale_matrix;
-
-    return std::move(transformation_matrix);
+    return transformation_matrix;
 }

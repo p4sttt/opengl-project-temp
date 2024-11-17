@@ -4,7 +4,7 @@
 #include <cmath>
 #include <glad.h>
 
-App::Window::Window() : _window(nullptr), _renderer(nullptr)
+App::Window::Window() : _window(nullptr), _renderer(new Graphics::Renderer())
 {
     if (!glfwInit())
     {
@@ -30,7 +30,6 @@ App::Window::Window() : _window(nullptr), _renderer(nullptr)
         LOG << "Window successfully created" << '\n';
     }
 
-    _renderer = new Graphics::Renderer();
     EventHandler::Initialize(this->_window);
 }
 
@@ -66,11 +65,11 @@ void App::Window::SetRenderer(Graphics::Renderer* renderer)
 
 void App::Window::Render()
 {
-    LOG << "Start render loop" << '\n';
     TransformController defaultTransformController(_renderer->GetModel()->GetTransform());
     EventHandler handler;
     handler.AddListener(&defaultTransformController);
 
+    LOG << "Start render loop" << '\n';
     while (!glfwWindowShouldClose(_window))
     {
         _renderer->Render();
@@ -88,14 +87,8 @@ void App::EventHandler::Initialize(GLFWwindow* window)
 
 void App::EventHandler::Shutdown()
 {
-    for (auto listender : _listeners)
-    {
-        delete listender;
-        listender = nullptr;
-    }
-
     _listeners.clear();
-    LOG << "Shutdown EventHandler" << '\n';
+    LOG << "Erase all EventHandlers" << '\n';
 }
 
 void App::EventHandler::KeyCallback(
@@ -115,11 +108,14 @@ void App::EventHandler::FramebufferSizeCallback(GLFWwindow* window, int width, i
 
 void App::EventHandler::AddListener(IEventListener* listener)
 {
-    _listeners.push_back(listener);
+    LOG << "Add new EventListener: " << listener << '\n';
+    if (listener)
+        _listeners.push_back(listener);
 }
 
 void App::EventHandler::RemoveListener(IEventListener* listener)
 {
+    LOG << "Remove EventListeber: " << listener << '\n';
     _listeners.erase(
         std::remove(_listeners.begin(), _listeners.end(), listener), _listeners.end()
     );
@@ -138,41 +134,41 @@ void App::TransformController::OnKeyEvent(int key, int action, int mods)
     {
         if (key == GLFW_KEY_UP)
             if (mods & GLFW_MOD_CONTROL)
-                _transform.Rotate(Math::Axis::x, true);
+                _transform->Rotate(Math::Axis::x, true);
             else
-                _transform.Move(Math::Axis::y, true);
+                _transform->Move(Math::Axis::y, true);
 
         else if (key == GLFW_KEY_RIGHT)
             if (mods & GLFW_MOD_CONTROL)
-                _transform.Rotate(Math::Axis::y, false);
+                _transform->Rotate(Math::Axis::y, false);
             else
-                _transform.Move(Math::Axis::x, true);
+                _transform->Move(Math::Axis::x, true);
 
         else if (key == GLFW_KEY_DOWN)
             if (mods & GLFW_MOD_CONTROL)
-                _transform.Rotate(Math::Axis::x, false);
+                _transform->Rotate(Math::Axis::x, false);
             else
-                _transform.Move(Math::Axis::y, false);
+                _transform->Move(Math::Axis::y, false);
 
         else if (key == GLFW_KEY_LEFT)
             if (mods & GLFW_MOD_CONTROL)
-                _transform.Rotate(Math::Axis::y, true);
+                _transform->Rotate(Math::Axis::y, true);
             else
-                _transform.Move(Math::Axis::x, false);
+                _transform->Move(Math::Axis::x, false);
 
         if (key == GLFW_KEY_LEFT_BRACKET)
-            _transform.Scale(Math::Axis::x, false);
+            _transform->Scale(Math::Axis::x, false);
         if (key == GLFW_KEY_RIGHT_BRACKET)
-            _transform.Scale(Math::Axis::x, true);
+            _transform->Scale(Math::Axis::x, true);
     }
     else if (action == GLFW_RELEASE)
     {
         if (key == GLFW_KEY_R)
-            _transform.Reset();
+            _transform->Reset();
     }
 }
 
-App::TransformController::TransformController(Math::Transform& transform)
+App::TransformController::TransformController(Math::Transform* transform)
     : _transform(transform)
 {
     LOG << "TransformController created" << '\n';

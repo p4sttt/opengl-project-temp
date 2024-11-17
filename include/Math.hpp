@@ -20,7 +20,7 @@ enum Axis
 template <int N, int M> class Matrix
 {
   private:
-    std::array<float, N * M> data = {};
+    std::array<float, N * M> _data = {};
 
   public:
     Matrix();
@@ -50,9 +50,10 @@ class Transform
     float rotation[3] = {0.0f, 0.0f, 0.0f};
     float scale[3] = {1.0f, 1.0f, 1.0f};
 
-    float _move_step = 0.01f;
-    float _rotation_step = 0.01f;
-    float _scale_step = 0.01f;
+    float _move_step = 0.05f;
+    float _rotation_step = 0.05f;
+    float _scale_step = 0.05f;
+    // _step_sister
 
   public:
     Transform();
