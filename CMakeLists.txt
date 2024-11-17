@@ -10,7 +10,7 @@ project(OpenGLProject)
 
 set(CMAKE_CXX_STANDARD 17)
 
-include_directories(include/vendor include)
+include_directories(vendor include)
 
 add_executable(OpenGLProject 
     src/main.cpp
@@ -18,7 +18,7 @@ add_executable(OpenGLProject
     src/ProjectLoader.cpp
     src/Math.cpp
     src/Graphics.cpp
-    include/vendor/glad.c
+    vendor/glad.c
 )
 
 find_package(glfw3 REQUIRED)

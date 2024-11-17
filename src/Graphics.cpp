@@ -112,6 +112,11 @@ const Graphics::VertexArray& Graphics::Model::GetVertexArray() const
     return _vao;
 }
 
+Math::Transform& Graphics::Model::GetTransform()
+{
+    return _transform;
+}
+
 unsigned Graphics::Model::GetDrawMode()
 {
     return _draw_mode;
@@ -152,7 +157,6 @@ Graphics::ShaderProgram::ShaderProgram(
     const char* vertexShaderSource, const char* fragmentShaderSource
 )
 {
-
     _id = glCreateProgram();
     LOG << "Creating ShaderProgram: " << _id << '\n';
 
@@ -188,10 +192,15 @@ Graphics::ShaderProgram::ShaderProgram(
     else
     {
         LOG << "ShaderProgram successfully created: " << _id << '\n';
+
+        _uniform_time_location = glGetUniformLocation(_id, "u_time");
+        _uniform_transformation_location = glGetUniformLocation(_id, "u_transformation");
     }
 
     delete vertexShaderSource;
     delete fragmentShaderSource;
+    vertexShaderSource = nullptr;
+    fragmentShaderSource = nullptr;
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 }
@@ -207,7 +216,17 @@ unsigned Graphics::ShaderProgram::GetId()
     return _id;
 }
 
-Graphics::Renderer::Renderer()
+void Graphics::ShaderProgram::SetTime(const float& time)
+{
+    glUniform1f(_uniform_time_location, time);
+}
+
+void Graphics::ShaderProgram::SetTransformation(const float* matrix)
+{
+    glUniformMatrix4fv(_uniform_transformation_location, 4, GL_FALSE, matrix);
+}
+
+Graphics::Renderer::Renderer() : _model(nullptr), _shader_program(nullptr)
 {
     LOG << "Create empty renderer" << '\n';
 }
@@ -215,7 +234,9 @@ Graphics::Renderer::Renderer()
 Graphics::Renderer::~Renderer()
 {
     delete _model;
-    delete _shaderProgram;
+    _model = nullptr;
+    delete _shader_program;
+    _shader_program = nullptr;
 }
 
 void Graphics::Renderer::Render()
@@ -223,11 +244,9 @@ void Graphics::Renderer::Render()
 
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
-    glUseProgram(_shaderProgram->GetId());
 
-    unsigned timeUniformLocation =
-        glGetUniformLocation(_shaderProgram->GetId(), "u_time");
-    glUniform1f(timeUniformLocation, _time);
+    glUseProgram(_shader_program->GetId());
+    _shader_program->SetTime(_time);
 
     _model->GetVertexArray().Bind();
     glDrawElements(
@@ -238,24 +257,38 @@ void Graphics::Renderer::Render()
     _time += _time_step;
 }
 
-const Graphics::Model* Graphics::Renderer::GetModel() const
+Graphics::Model* Graphics::Renderer::GetModel()
 {
     return _model;
 }
 
 const Graphics::ShaderProgram* Graphics::Renderer::GetShaderProgram() const
 {
-    return _shaderProgram;
+    return _shader_program;
 }
 
 void Graphics::Renderer::SetModel(Model* model)
 {
     LOG << "Setting Model" << '\n';
+
+    if (_model)
+    {
+        delete _model;
+        _model = nullptr;
+    }
+
     _model = model;
 }
 
 void Graphics::Renderer::SetShaderProgram(ShaderProgram* ShaderProgram)
 {
     LOG << "Setting ShaderProgram" << '\n';
-    _shaderProgram = ShaderProgram;
+
+    if (_shader_program)
+    {
+        delete _shader_program;
+        _shader_program = nullptr;
+    }
+
+    _shader_program = ShaderProgram;
 }

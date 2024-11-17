@@ -41,6 +41,8 @@ class Model
   private:
     std::vector<Math::Vertex> _vertices;
     std::vector<unsigned> _indices;
+    Math::Transform _transform;
+
     VertexArray _vao;
     Buffer _vbo, _ebo;
     unsigned _draw_mode;
@@ -53,6 +55,7 @@ class Model
     ~Model();
 
     const VertexArray& GetVertexArray() const;
+    Math::Transform& GetTransform();
     unsigned GetDrawMode();
     size_t GetElementsCount();
 };
@@ -61,6 +64,8 @@ class ShaderProgram
 {
   private:
     unsigned _id;
+    unsigned _uniform_time_location;
+    unsigned _uniform_transformation_location;
 
     unsigned CompileShader(unsigned type, const char* source);
 
@@ -69,13 +74,16 @@ class ShaderProgram
     ~ShaderProgram();
 
     unsigned GetId();
+    void SetTime(const float& time);
+    void SetTransformation(const float* matrix);
 };
 
 class Renderer
 {
   private:
     Model* _model;
-    ShaderProgram* _shaderProgram;
+    ShaderProgram* _shader_program;
+
     float _time = 0.0f;
     const float _time_step = 0.01f;
 
@@ -85,10 +93,11 @@ class Renderer
 
     void Render();
 
-    const Model* GetModel() const;
+    Model* GetModel();
     const ShaderProgram* GetShaderProgram() const;
 
     void SetModel(Model* model);
     void SetShaderProgram(ShaderProgram* shaderProgram);
 };
+
 } // namespace Graphics

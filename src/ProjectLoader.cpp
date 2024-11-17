@@ -6,19 +6,16 @@
 #include <glad.h>
 #include <sstream>
 
-ProjectLoader* ProjectLoader::instance = nullptr;
+ProjectLoader ProjectLoader::_instance;
 
 ProjectLoader::ProjectLoader()
 {
+    LOG_INFO << "ProjectLoader was created" << '\n';
 }
 
 ProjectLoader& ProjectLoader::GetInstance()
 {
-    if (instance == nullptr)
-    {
-        instance = new ProjectLoader();
-    }
-    return *instance;
+    return _instance;
 }
 
 void ProjectLoader::ParseDrawMode(const char* line, unsigned& drawMode)
@@ -45,14 +42,16 @@ void ProjectLoader::ParseDrawMode(const char* line, unsigned& drawMode)
     }
 }
 
-void ProjectLoader::ParseVertex(const char* line, std::vector<Math::Vertex>& vertices)
+void ProjectLoader::ParseVertex(
+    const char* line, std::vector<Math::Vertex>& vertices
+)
 {
     LOG << "Starting parse Vertex" << '\n';
     float x, y, z;
     if (sscanf(line + 2, "%f %f %f", &x, &y, &z) == 3)
     {
-        LOG << "Vertex successfully parsed: " << "x=" << x << ", y=" << y << ", z=" << z
-            << '\n';
+        LOG << "Vertex successfully parsed: " << "x=" << x << ", y=" << y
+            << ", z=" << z << '\n';
         vertices.push_back(Math::Vertex{x, y, z});
     }
     else
@@ -61,7 +60,9 @@ void ProjectLoader::ParseVertex(const char* line, std::vector<Math::Vertex>& ver
     }
 }
 
-void ProjectLoader::ParseIndices(const char* line, std::vector<unsigned int>& indices)
+void ProjectLoader::ParseIndices(
+    const char* line, std::vector<unsigned int>& indices
+)
 {
     unsigned int index;
     const char* ptr = line + 2;
@@ -122,7 +123,8 @@ Graphics::Model* ProjectLoader::LoadModel()
 
     modelFile.close();
 
-    LOG << "Model loaded: drawMode=" << drawMode << ", verticesCount=" << vertices.size()
+    LOG << "Model loaded: drawMode=" << drawMode
+        << ", verticesCount=" << vertices.size()
         << ", indicesCount=" << indices.size() << '\n';
 
     return new Graphics::Model(drawMode, vertices, indices);
@@ -159,7 +161,9 @@ Graphics::ShaderProgram* ProjectLoader::LoadShaderProgram()
     LoadShader(_vertex_shader_path, &vertexShaderSource);
     LoadShader(_fragment_shader_path, &fragmentShaderSource);
 
-    return new Graphics::ShaderProgram(vertexShaderSource, fragmentShaderSource);
+    return new Graphics::ShaderProgram(
+        vertexShaderSource, fragmentShaderSource
+    );
 }
 
 void ProjectLoader::SetVertexShaderPath(const char* path)

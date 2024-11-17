@@ -1,7 +1,8 @@
 #include "App.hpp"
 #include "Logger.hpp"
+#include <algorithm>
+#include <cmath>
 #include <glad.h>
-#include <iostream>
 
 App::Window::Window() : _window(nullptr), _renderer(nullptr)
 {
@@ -28,73 +29,83 @@ App::Window::Window() : _window(nullptr), _renderer(nullptr)
     {
         LOG << "Window successfully created" << '\n';
     }
+
+    _renderer = new Graphics::Renderer();
+    EventHandler::Initialize(this->_window);
 }
 
 App::Window::~Window()
 {
     glfwDestroyWindow(_window);
     glfwTerminate();
+    EventHandler::Shutdown();
+
+    if (_renderer)
+    {
+        delete _renderer;
+        _renderer = nullptr;
+    }
 
     LOG << "Window killed" << '\n';
 }
 
-void App::Window::SetRenderer(Graphics::Renderer* renderer)
+Graphics::Renderer* App::Window::GetRenderer()
 {
-    delete _renderer;
-    _renderer = renderer;
+    return _renderer;
 }
 
-GLFWwindow* App::Window::GetGLFWWindow()
+void App::Window::SetRenderer(Graphics::Renderer* renderer)
 {
-    return _window;
+    if (_renderer)
+    {
+        delete _renderer;
+        _renderer = nullptr;
+    }
+    _renderer = renderer;
 }
 
 void App::Window::Render()
 {
     LOG << "Start render loop" << '\n';
+    TransformController defaultTransformController(_renderer->GetModel()->GetTransform());
+    EventHandler handler;
+    handler.AddListener(&defaultTransformController);
 
     while (!glfwWindowShouldClose(_window))
     {
         _renderer->Render();
-
         glfwSwapBuffers(_window);
-
-        glfwPollEvents();
+        EventHandler::PollEvents();
     }
 }
 
-App::EventHandler::EventHandler(GLFWwindow* window) : _window(window)
+void App::EventHandler::Initialize(GLFWwindow* window)
 {
-    glfwSetWindowUserPointer(_window, this);
-    glfwSetFramebufferSizeCallback(_window, FramebufferSizeCallback);
-    glfwSetKeyCallback(_window, KeyCallback);
-    glfwSetMouseButtonCallback(_window, MouseButtonCallback);
+    LOG << "Initialize EventHandler" << '\n';
+    glfwSetKeyCallback(window, KeyCallback);
+    glfwSetFramebufferSizeCallback(window, FramebufferSizeCallback);
 }
 
-App::EventHandler::~EventHandler()
+void App::EventHandler::Shutdown()
 {
-    glfwSetKeyCallback(_window, nullptr);
-    glfwSetMouseButtonCallback(_window, nullptr);
+    for (auto listender : _listeners)
+    {
+        delete listender;
+        listender = nullptr;
+    }
+
+    _listeners.clear();
+    LOG << "Shutdown EventHandler" << '\n';
 }
 
-void App::EventHandler::RegisterKeyCallback(int key, Callback callback)
+void App::EventHandler::KeyCallback(
+    GLFWwindow* window, int key, int scancode, int action, int mods
+)
 {
-    _key_callbacks[key] = callback;
-}
-
-void App::EventHandler::RegisterMouseButtonCallback(int button, Callback callback)
-{
-    _mouse_button_callbacks[button] = callback;
-}
-
-void App::EventHandler::UnregisterKeyCallback(int key)
-{
-    _key_callbacks.erase(key);
-}
-
-void App::EventHandler::UnregisterMouseButtonCallback(int button)
-{
-    _mouse_button_callbacks.erase(button);
+    for (auto listener : _listeners)
+    {
+        listener->OnKeyEvent(key, action, mods);
+    }
 }
 
 void App::EventHandler::FramebufferSizeCallback(GLFWwindow* window, int width, int height)
@@ -102,32 +113,73 @@ void App::EventHandler::FramebufferSizeCallback(GLFWwindow* window, int width, i
     glViewport(0, 0, width, height);
 }
 
-void App::EventHandler::KeyCallback(
-    GLFWwindow* window, int key, int scancode, int action, int mods
-)
+void App::EventHandler::AddListener(IEventListener* listener)
 {
-    EventHandler* handler = static_cast<EventHandler*>(glfwGetWindowUserPointer(window));
-    if (handler && action == GLFW_PRESS)
+    _listeners.push_back(listener);
+}
+
+void App::EventHandler::RemoveListener(IEventListener* listener)
+{
+    _listeners.erase(
+        std::remove(_listeners.begin(), _listeners.end(), listener), _listeners.end()
+    );
+}
+
+void App::EventHandler::PollEvents()
+{
+    glfwPollEvents();
+}
+
+std::vector<App::IEventListener*> App::EventHandler::_listeners;
+
+void App::TransformController::OnKeyEvent(int key, int action, int mods)
+{
+    if (action == GLFW_PRESS || action == GLFW_REPEAT)
     {
-        auto it = handler->_key_callbacks.find(key);
-        if (it != handler->_key_callbacks.end())
-        {
-            it->second();
-        }
+        if (key == GLFW_KEY_UP)
+            if (mods & GLFW_MOD_CONTROL)
+                _transform.Rotate(Math::Axis::x, true);
+            else
+                _transform.Move(Math::Axis::y, true);
+
+        else if (key == GLFW_KEY_RIGHT)
+            if (mods & GLFW_MOD_CONTROL)
+                _transform.Rotate(Math::Axis::y, false);
+            else
+                _transform.Move(Math::Axis::x, true);
+
+        else if (key == GLFW_KEY_DOWN)
+            if (mods & GLFW_MOD_CONTROL)
+                _transform.Rotate(Math::Axis::x, false);
+            else
+                _transform.Move(Math::Axis::y, false);
+
+        else if (key == GLFW_KEY_LEFT)
+            if (mods & GLFW_MOD_CONTROL)
+                _transform.Rotate(Math::Axis::y, true);
+            else
+                _transform.Move(Math::Axis::x, false);
+
+        if (key == GLFW_KEY_LEFT_BRACKET)
+            _transform.Scale(Math::Axis::x, false);
+        if (key == GLFW_KEY_RIGHT_BRACKET)
+            _transform.Scale(Math::Axis::x, true);
+    }
+    else if (action == GLFW_RELEASE)
+    {
+        if (key == GLFW_KEY_R)
+            _transform.Reset();
     }
 }
 
-void App::EventHandler::MouseButtonCallback(
-    GLFWwindow* window, int button, int action, int mods
-)
+App::TransformController::TransformController(Math::Transform& transform)
+    : _transform(transform)
 {
-    EventHandler* handler = static_cast<EventHandler*>(glfwGetWindowUserPointer(window));
-    if (handler && action == GLFW_PRESS)
-    {
-        auto it = handler->_mouse_button_callbacks.find(button);
-        if (it != handler->_mouse_button_callbacks.end())
-        {
-            it->second();
-        }
-    }
+    LOG << "TransformController created" << '\n';
+}
+
+App::TransformController::~TransformController()
+{
+
+    LOG << "Kill TransformController" << '\n';
 }

@@ -6,7 +6,7 @@
 class ProjectLoader
 {
   private:
-    static ProjectLoader* instance;
+    static ProjectLoader _instance;
 
     const char* _vertex_shader_path = "../res/shaders/vertex.glsl";
     const char* _fragment_shader_path = "../res/shaders/fragment.glsl";
@@ -15,6 +15,7 @@ class ProjectLoader
     ProjectLoader();
     ProjectLoader(const ProjectLoader&) = delete;
     ProjectLoader& operator=(const ProjectLoader&) = delete;
+    ~ProjectLoader() = default;
 
     void ParseDrawMode(const char* line, unsigned& drawMode);
     void ParseVertex(const char* line, std::vector<Math::Vertex>& vertices);
