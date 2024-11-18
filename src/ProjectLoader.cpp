@@ -26,10 +26,20 @@ void ProjectLoader::ParseDrawMode(const char* line, unsigned& drawMode)
         LOG << "DrawMode successfully parsed: TRIANGLES" << '\n';
         drawMode = GL_TRIANGLES;
     }
+    else if (strncmp(line, "TRIANGLES_STRIP", 16) == 0)
+    {
+        LOG << "DrawMode successfully parsed: TRIANGLES_STRIP" << '\n';
+        drawMode = GL_TRIANGLE_STRIP;
+    }
     else if (strncmp(line, "LINES", 6) == 0)
     {
         LOG << "DrawMode successfully parsed: LINES" << '\n';
         drawMode = GL_LINES;
+    }
+    else if (strncmp(line, "LINES_STRIP", 12) == 0) 
+    {
+        LOG << "DrawMode successfully parsed: LINES_STRIP" << '\n';
+        drawMode = GL_LINE_STRIP;
     }
     else if (strncmp(line, "POINTS", 7) == 0)
     {

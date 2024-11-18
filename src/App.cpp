@@ -11,7 +11,7 @@ App::Window::Window() : _window(nullptr), _renderer(new Graphics::Renderer())
         LOG_ERROR << "Initialize GLFW failed" << '\n';
     }
 
-    _window = glfwCreateWindow(640, 480, "This is GLFW Window", NULL, NULL);
+    _window = glfwCreateWindow(500, 500, "OpenGL Ultimate Window", NULL, NULL);
     if (!_window)
     {
         glfwTerminate();
